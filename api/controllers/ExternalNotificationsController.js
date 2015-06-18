@@ -1,22 +1,33 @@
+var lastStatus;
+
 module.exports.jenkinsBestBuy = function (req, res) {
 
 	var notification = req.body;
 	var build = notification.build;
 
 	if (build.full_url.indexOf('bestbuy.com') == 0) return res.ok('welp');
+
+	// only show completed builds
 	if (build.phase != 'COMPLETED') return res.ok('thanks');
 
-	var roomId;
-	var chicken = build.status == 'FAILURE' ? ' :buildchicken:' : '';
-	var url = build.full_url + "console";
-	var text = 'Build Notification: ' + notification.name + ' | Status: ' + build.status + chicken + ' | ' + url;
+	// don't show successful builds if the last build was a success
+	if(lastStatus == 'SUCCESS' && build.status == 'SUCCESS') return res.ok('thanks2');
 
-	Room.findOne({name: 'BestBuy'})
+	lastStatus = build.status;
+
+	var roomId;
+	var emote = build.status == 'FAILURE' ? ' :buildchicken:' : ':unsmith:';
+	var url = build.full_url + "console";
+	var protractorUrl = build.full_url + 'artifact/e2e_screenshots/my-report.html';
+	var text = emote + ' Build Notification: { name: "' + notification.name + '" , status: "' + build.status + '", link: ' + url + ', protractorReport: ' + protractorUrl + ' };';
+
+	Room.findOne({name: 'minos'})
 		.then(function (room) {
 			roomId = room.id;
 			return Message.create({
 				room: room.id,
-				text: text
+				text: text,
+				type: 'buildNotification'
 			})
 		})
 		.then(function (message) {

@@ -2,24 +2,28 @@ var Promise = require('bluebird');
 var fs = Promise.promisifyAll(require('fs'));
 var path = require('path');
 
+
 module.exports.index = function (req, res) {
-	getEmoticonNamesFromDisk().then(function (emoticons) {
-		res.view('index', {
-			userId: req.session.userId,
-			isProduction: sails.config.environment === 'production',
-			emoticons: emoticons
-		});
-	})
-};
+	var isProd = sails.config.environment === 'production';
+	Promise.join(
+		emoticonService.getEmoticonNamesFromDisk(),
+		UserSettings.findOne({user: req.session.userId}),
+		fs.readdirAsync(path.join(__dirname, '..', '..', 'assets', 'bundled')).catch(empty)
+	)
+		.spread(function (emoticons, settings, bundledFiles) {
+			var templates = _.find(bundledFiles, function (file) {
+				return _.includes(file, 'templates');
+			});
 
-module.exports.react = function (req, res) {
-	getEmoticonNamesFromDisk().then(function (emoticons) {
-		res.view('react', {
-			userId: req.session.userId,
-			isProduction: sails.config.environment === 'production',
-			emoticons: emoticons
+			res.view(isProd ? 'index-prod' : 'index', {
+				templates: templates,
+				userId: req.session.userId,
+				isProduction: isProd,
+				emoticons: emoticons,
+				loadingEmote: emoticonService.getLoadScreenEmoticon(),
+				debugging: settings.showDebugging
+			});
 		});
-	})
 };
 
 module.exports.login = function (req, res) {
@@ -30,6 +34,6 @@ module.exports.login = function (req, res) {
 	res.view('login');
 };
 
-function getEmoticonNamesFromDisk() {
-	return fs.readdirAsync(path.join(__dirname, '..', '..','assets', 'images', 'emoticons'));
+function empty() {
+
 }

@@ -1,6 +1,6 @@
 window.app = angular.module('bunker', [
+	'ngTouch',
 	'ngSanitize',
-	'sailsResource',
 	'ui.router',
 	'ui.gravatar',
 	'angularMoment',
@@ -8,12 +8,13 @@ window.app = angular.module('bunker', [
 	'youtube-embed',
 	'angular.filter',
 	'hljs',
-	'plangular' /* soundcloud embed */
+	'plangular', /* soundcloud embed */
+	'notification',
+	'ngAudio',
+	'angularStats',
+	'ui.sortable'
 ])
-	.config(function (sailsResourceProvider, $stateProvider, $urlRouterProvider) {
-		sailsResourceProvider.configuration = {
-			verbose: false
-		};
+	.config(function ($stateProvider, $urlRouterProvider) {
 
 		$urlRouterProvider.otherwise('/');
 		$stateProvider
@@ -33,59 +34,39 @@ window.app = angular.module('bunker', [
 				// The 'chat' state/controller/view will be in use
 				url: '/{roomId}'
 			})
+			.state('inbox', {
+				url: '/inbox',
+				templateUrl: '/assets/app/inbox/list.html',
+				controller: 'InboxController as inbox'
+			})
 			.state('roomHistory', {
 				url: '/rooms/{roomId}/history?date&message',
 				templateUrl: '/assets/app/room/roomHistory.html',
 				controller: 'RoomHistoryController as room'
 			});
 	})
-	.config(function ($compileProvider) {
-		// This is where we might customize the sanitize whitelist some day
-		// $compileProvider.imgSrcSanitizationWhitelist();
-
-
+	.config(function ($compileProvider, gravatarServiceProvider) {
 		// disable debug info
-		$compileProvider.debugInfoEnabled(!window.isProduction);
+		//$compileProvider.debugInfoEnabled(window.debugging || !window.isProduction);
 
 		// to reenable in prod, use
 		// angular.reloadWithDebugInfo()
-	})
-	.config(function (gravatarServiceProvider) {
+
 		gravatarServiceProvider.defaults = {
 			'default': 'identicon'
-		};
+		}
 	})
-	.run(function ($rootScope, $document, user, $window) {
+	.run(function ($rootScope, $document, bunkerListener) {
+
 		// html5 visibility api instead of win.focus or win.blur
-		$document.on("visibilitychange", function () {
+		$document.on('visibilitychange', function () {
 			$rootScope.$broadcast(document.hidden ? 'visibilityHide' : 'visibilityShow');
 		});
 
-		// Handle user away notification on window focus/blur
-		$rootScope.$on('visibilityShow', function () {
-			user.current.present = true;
-			user.current.lastActivity = new Date().toISOString();
-			user.current.$activity();
+		$rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+			$rootScope.roomId = toParams.roomId || null;
+			$rootScope.$broadcast('roomIdChanged', $rootScope.roomId);
 		});
 
-		$rootScope.$on('visibilityHide', function () {
-			user.current.present = false;
-			user.current.lastActivity = new Date().toISOString();
-			user.current.$activity();
-		});
-
-		$rootScope.$on('$sailsConnected', function () {
-			user.current.$connect();
-		});
-
-		// watch room ids change
-		$rootScope.$watch(function () {
-			return $window.location.hash;
-		}, function (newVal, oldVal) {
-			var newMatch = /^#\/rooms\/([A-z0-9]*)(?:.*)?$/g.exec(newVal) || [];
-			var oldMatch = /^#\/rooms\/([A-z0-9]*)(?:.*)?$/g.exec(oldVal) || [];
-
-			$rootScope.roomId = newMatch[1];
-			$rootScope.$broadcast('roomIdChanged', newMatch[1], oldMatch[1]);
-		});
+		bunkerListener.init();
 	});

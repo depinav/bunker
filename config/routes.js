@@ -35,17 +35,18 @@ module.exports.routes = {
 	'/': 'ViewController.index',
 	'/login': 'ViewController.login',
 	'/logout': 'AuthController.logout',
-	'/react': 'ViewController.react',
+	'/init': 'UserController.init',
 	'/user/current/activity': 'UserController.activity',
 	'/user/current/connect': 'UserController.connect',
+	'/user/current/markInboxRead': 'UserController.markInboxRead',
+	'/user/current/clearInbox': 'UserController.clearInbox',
 	'/room/:id/join': 'RoomController.join',
 	'/room/:id/leave': 'RoomController.leave',
+	'/room/:id/message': 'RoomController.message',
 	'/room/:id/messages': 'RoomController.messages',
 	'/room/:id/history': 'RoomController.history',
 	'/room/:id/media': 'RoomController.media',
 	'/message/emoticons': 'MessageController.emoticonCounts',
-
-	'get /api2/init': 'UserController.init'
 
 	/***************************************************************************
 	 *                                                                          *

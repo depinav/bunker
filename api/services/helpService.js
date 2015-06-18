@@ -1,8 +1,5 @@
-var fs = require('fs');
 var Promise = require('bluebird');
-
-Promise.promisifyAll(fs);
-
+var fs = Promise.promisifyAll(require('fs'));
 var helpDir = './api/services/help/';
 
 module.exports = {
@@ -13,16 +10,24 @@ module.exports = {
 			var command = arr[1];
 			if (command === 'nick') {
 				return this.readHelpFile('nick.txt');
-			} else if (command === "me") {
+			} else if (command === 'me') {
 				return this.readHelpFile('me.txt');
-			} else if (command === "roll") {
+			} else if (command === 'roll') {
 				return this.readHelpFile('roll.txt');
-			} else if (command === "topic") {
+			} else if (command === 'topic') {
 				return this.readHelpFile('topic.txt');
-			} else if (command === "images") {
+			} else if (command === 'images') {
 				return this.readHelpFile('images.txt');
-			} else if (command === "gravatar") {
+			} else if (command === 'gravatar') {
 				return this.readHelpFile('gravatar.txt');
+			} else if (command === 'magic8ball') {
+				return this.readHelpFile('magic8ball.txt');
+			} else if (command === 'formatting') {
+				return this.readHelpFile('formatting.txt');
+			} else if (command === 'away') {
+				return this.readHelpFile('away.txt');
+			} else if (command === 'hangman') {
+				return this.readHelpFile('hangman.txt');
 			}
 		}
 		return this.readHelpFile('basic.txt');
@@ -30,7 +35,7 @@ module.exports = {
 	readHelpFile: function (fileName) {
 		return fs.readFileAsync(helpDir + fileName, 'utf-8')
 			.then(function (data) {
-				return "<pre>" + data + "</pre>"; // ew, markup on server
+				return '<pre>' + data + '</pre>'; // ew, markup on server
 			});
 	}
 };
